@@ -1,0 +1,72 @@
+name: Build Push Gateway Image and Update Helm
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  IMAGE_NAME: haishen108/yudao-gateway
+  DEPLOY_REPO: haishen/yudao-deploy
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 拉取源码仓库
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # 2. 安装 JDK 17
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # 3. Maven 构建
+      - name: Build jar
+        run: mvn clean package -DskipTests
+
+      # 4. 生成镜像 tag（时间戳）
+      - name: Set tag
+        run: echo "TAG=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
+
+      # 5. 登录 Docker Hub
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 6. 构建并推送 amd64 镜像
+      - name: Build & push image (amd64)
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            -t $IMAGE_NAME:${TAG} \
+            --push .
+
+      # 7. 拉取部署仓库
+      - name: Checkout deploy repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.DEPLOY_REPO }}
+          token: ${{ secrets.DEPLOY_REPO_TOKEN }}
+          path: deploy
+
+      # 8. 更新 gateway 的 Helm values.yaml
+      - name: Update Helm values.yaml
+        run: |
+          sed -i "s/tag:.*/tag: \"${TAG}\"/" deploy/helm/gateway/values.yaml
+
+      # 9. 提交并推送到部署仓库（触发 Argo CD）
+      - name: Commit & push
+        run: |
+          cd deploy
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "chore(gateway): update image to ${TAG}"
+          git push
