@@ -43,8 +43,8 @@ jobs:
       # 6. 构建并推送 amd64 镜像
       - name: Build & push image (amd64)
         run: |
+          cd yudao-gateway
           docker buildx build \
-            --platform linux/amd64 \
             -t $IMAGE_NAME:${TAG} \
             --push .
 
