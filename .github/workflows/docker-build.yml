@@ -59,9 +59,8 @@ jobs:
       # 8. 更新 gateway 的 gateway/gateway.yaml
       - name: Update gateway.yaml
         run: |
-          sed -i 's|image: haishen108/yudao-gateway:.*|image: haishen108/yudao-gateway:'"${TAG}"'|' gateway/gateway.yaml
-
-
+          sed -i 's|image: .*yudao-gateway:.*|image: haishen108/yudao-gateway:'"${TAG}"'|' yudao-deploy/gateway/gateway.yaml
+          
       # 9. 提交并推送到部署仓库（触发 Argo CD）
       - name: Commit & push
         run: |
