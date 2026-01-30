@@ -54,12 +54,13 @@ jobs:
         with:
           repository: ${{ env.DEPLOY_REPO }}
           token: ${{ secrets.DEPLOY_REPO_TOKEN }}
-          path: deploy
+          path: yudao-deploy
 
       # 8. 更新 gateway 的 gateway/gateway.yaml
       - name: Update gateway.yaml
         run: |
-          sed -i 's|image: .*yudao-gateway:.*|image: haishen108/yudao-gateway:'"${TAG}"'|' yudao-deploy/gateway/gateway.yaml
+          ls -R yudao-deploy
+          sed -i "s|image: .*yudao-gateway:.*|image: ${IMAGE_NAME}:${TAG}|" yudao-deploy/gateway/gateway.yaml
           
       # 9. 提交并推送到部署仓库（触发 Argo CD）
       - name: Commit & push
