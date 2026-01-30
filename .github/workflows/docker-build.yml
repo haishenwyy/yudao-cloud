@@ -7,7 +7,7 @@ on:
 
 env:
   IMAGE_NAME: haishen108/yudao-gateway
-  DEPLOY_REPO: haishen/yudao-deploy
+  DEPLOY_REPO: https://github.com/haishenwyy/yudao-deploy.git
 
 jobs:
   build:
@@ -56,10 +56,11 @@ jobs:
           token: ${{ secrets.DEPLOY_REPO_TOKEN }}
           path: deploy
 
-      # 8. 更新 gateway 的 Helm values.yaml
-      - name: Update Helm values.yaml
+      # 8. 更新 gateway 的 gateway/gateway.yaml
+      - name: Update gateway.yaml
         run: |
-          sed -i "s/tag:.*/tag: \"${TAG}\"/" deploy/helm/gateway/values.yaml
+          sed -i 's|image: haishen108/yudao-gateway:.*|image: haishen108/yudao-gateway:'"${TAG}"'|' gateway/gateway.yaml
+
 
       # 9. 提交并推送到部署仓库（触发 Argo CD）
       - name: Commit & push
